@@ -61,7 +61,7 @@ function preload(){
   // sketchContainer.hide();
   // loader.show();
 
-  const url = `http://localhost:3000/githubData/${defaultUsername}`;
+  const url = `https://contribeat.herokuapp.com/githubData/${defaultUsername}`;
   httpGet(url, 'json', false, function(response) {
     data = response;
     avatarElem.src=data.imgLink;
