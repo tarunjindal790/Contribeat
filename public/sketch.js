@@ -77,7 +77,7 @@ function preload(){
 
 function loadData(username) {
   const avatarElem = document.querySelector('#githubUserAvatarImg');
-  const url = `http://localhost:3000/githubData/${username}`;
+  const url = `https://contribeat.herokuapp.com/githubData/${username}`;
   httpGet(url, 'json', false, function(response) {
     data = response;
     // togglePlayPause();
