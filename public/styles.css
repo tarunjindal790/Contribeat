@@ -1,0 +1,42 @@
+body {
+  text-align: center;
+  margin: 20px;
+}
+
+.header {
+  margin: 12px;
+}
+
+.title {
+  margin: 5px;
+  font-size: 2em;
+  font-weight: 700;
+}
+
+.comfortaa-font {
+  font-family: "Comfortaa", cursive;
+}
+
+#avatarImg {
+  margin: 12px;
+}
+
+#avatarImg img {
+  width: 150px;
+  border-radius: 100%;
+}
+
+#sketchContainer {
+  text-align: center;
+  height: 150px;
+  width: 50%;
+  margin: auto;
+}
+
+.d-none {
+  display: none;
+}
+
+.d-block {
+  display: block;
+}
