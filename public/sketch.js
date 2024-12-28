@@ -61,7 +61,7 @@ function preload(){
   // sketchContainer.hide();
   // loader.show();
 
-  const url = `https://contribeat.herokuapp.com/githubData/${defaultUsername}`;
+  const url = `https://contribeat.onrender.com/githubData/${defaultUsername}`;
   httpGet(url, 'json', false, function(response) {
     data = response;
     avatarElem.src=data.imgLink;
@@ -77,7 +77,7 @@ function preload(){
 
 function loadData(username) {
   const avatarElem = document.querySelector('#githubUserAvatarImg');
-  const url = `https://contribeat.herokuapp.com/githubData/${username}`;
+  const url = `https://contribeat.onrender.com/githubData/${username}`;
   httpGet(url, 'json', false, function(response) {
     data = response;
     // togglePlayPause();
