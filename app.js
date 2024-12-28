@@ -33,7 +33,7 @@ async function loadGithubData(username){
     const imgLink = $(".avatar-user.width-full").attr('src');
     const myCells = [];
     $days.each((i,e)=>{
-      myCells.push($(e).attr('data-count'));
+      myCells.push($(e).attr('data-level'));
     });
     return {myCells, imgLink};
 }
