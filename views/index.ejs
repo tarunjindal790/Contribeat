@@ -19,25 +19,38 @@
             <p class="comfortaa-font">Turn your github contributions graph into music!</p>
         </div>
         <div>
-            <div class="m-4">
+            <div id="searchBar" class="input-group m-4">
+                <input type="text" name="usernameInput" id="usernameInput" placeholder="Enter a name or username...">
+                <div class="input-group-append">
+                    <button class="btn btn-dark" onclick="searchUsers()">
+                        <i class="fa-solid fa-search"></i> <!-- Search icon -->
+                    </button>
+                </div>
+            </div>
+            
+            <!-- List of possible GitHub profiles -->
+            <div id="searchResults"></div>
+            <!-- <div class="m-4">
                 <input type="text" name="usernameInput" id="usernameInput" placeholder="Enter your username...">
                 <button class="btn btn-dark" onclick="onSearchClick()">Search</button>
-            </div>
+            </div> -->
             <div class="m-4">
                 <button class="btn btn-primary" id="playPauseBtn" onclick="togglePlayPause()">
-                    <i id="playBtn" class="fa-solid fa-play"></i>
-                    <i id="pauseBtn" class="fa-solid fa-pause d-none"></i>
+                    <i id="playBtn" class="fa-solid fa-play xx-large"></i>
+                    <i id="pauseBtn" class="fa-solid fa-pause d-none xx-large"></i>
                 </button>
                 
                 <button class="btn btn-secondary" onclick="clearAll()">Clear all</button>
                 <label for="bpmSlider" id="bpmSliderLabel">BPM</label>
                 <input name="bpmSlider" onchange="bpmSliderChange()" type="range" id="bpmSlider" min="30" max="300" value="140">
             </div>
-            <div id="avatarImg">
-                <img src="" id="githubUserAvatarImg" alt="">
-            </div>
-            <div id="sketchContainer"></div>
             <div class="spinner-border" id="loader"></div>
+            <div id="userData">
+                <div id="avatarImg">
+                    <img src="" id="githubUserAvatarImg" alt="">
+                </div>
+                <div id="sketchContainer"></div>
+            </div>
         </div>
     </body>
 </html>

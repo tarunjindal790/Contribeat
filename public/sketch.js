@@ -30,9 +30,6 @@ const defaultUsername = 'tarunjindal790';
 let sketchWidth;
 let sketchHeight;
 
-// document.querySelector('#bpmSliderLabel').textContent('BPM : '+ bpm);
-
-
 function bpmSliderChange(){
   const bpmSliderValue = document.querySelector('#bpmSlider').value;
   bpm = bpmSliderValue;
@@ -44,37 +41,52 @@ function onSearchClick() {
    loadData(usernameVal);
 }
 
-// let sketch = function(p) {
-//   p.setup = setup;
-//   p.preload = preload;
-//   p.draw = draw;
-// }
-
-// new p5(sketch, 'sketchContainer')
-
 function preload(){
   console.log('preload...')
   const avatarElem = document.querySelector('#githubUserAvatarImg');
-  // const sketchContainer = document.querySelector('#sketchContainer');
   const loader = document.querySelector('#loader');
   const usernameInput = document.querySelector('#usernameInput');
   usernameInput.value = defaultUsername;
-  // sketchContainer.hide();
-  // loader.show();
-
-  // const url = `${API_BASE_URL}/githubData/${defaultUsername}`;
-  // httpGet(url, 'json', false, function(response) {
-  //   data = response;
-  //   avatarElem.src=data.imgLink;
-  //   setup()
-  //   loader.classList.toggle('d-none');
-  //   // sketchContainer.classList.toggle('d-none');
-  //   // sketchContainer.classList.add('d-block');
-  // });
-  
   loadData(defaultUsername);
-  // setup();
 }
+
+async function searchUsers() {
+  const query = document.getElementById("usernameInput").value.trim();
+  if (!query) {
+      alert("Please enter a name or username!");
+      return;
+  }
+
+  document.getElementById("searchResults").innerHTML = "Searching...";
+
+  const res = await fetch(`/searchGithubUsers/${encodeURIComponent(query)}`);
+  const users = await res.json();
+  console.log("users:", users);
+
+  if ((users.error && users.error.length) || users.length === 0) {
+      document.getElementById("searchResults").innerHTML = "No users found!";
+      return;
+  }
+
+  let resultsHTML = "<p>Select a user:</p><ul>";
+  users.forEach(user => {
+      resultsHTML += `
+          <li>
+              <img src="${user.avatarUrl}" width="30" height="30"> 
+              <button class="btn btn-link" onclick="fetchUserData('${user.login}')">${user.login}</button>
+          </li>
+      `;
+  });
+  resultsHTML += "</ul>";
+
+  document.getElementById("searchResults").innerHTML = resultsHTML;
+}
+
+async function fetchUserData(username) {
+  document.getElementById("searchResults").innerHTML = ``;
+  loadData(username);
+}
+
 
 function loadData(username) {
   stopMusic();
@@ -82,8 +94,11 @@ function loadData(username) {
   const url = `${API_BASE_URL}/githubData/${username}`;
   loader.classList.add('d-block');
   httpGet(url, 'json', false, function(response) {
+    if(!response){
+      return;
+    }
     data = response;
-    // console.log("I got data:", data);
+    console.log("I got data:", data);
     avatarElem.src=data.avatarUrl;
     setup();
     loader.classList.remove('d-block');
@@ -98,12 +113,7 @@ function setup() {
   sketchWidth = document.querySelector('#sketchContainer').offsetWidth;
   const myCanvas = createCanvas(sketchWidth, sketchHeight);
   myCanvas.parent("#sketchContainer");
-  // controlPanelHeight = 0;
   frameRate(10);
-
-  // Prepare cells
-  // cellWidth = width / numTimeSteps;
-  // cellHeight = (height) / pitches.length;
 
   cellWidth = 12;
   cellHeight = 12;
@@ -126,24 +136,6 @@ function setup() {
   // Create SoundLoop with 8th-note-long loop interval
   sloop = new p5.SoundLoop(soundLoop, "16n");
   sloop.bpm = bpm;
-  
-  // UI
-  // playPauseButton = createButton('PLAY/PAUSE');
-  // playPauseButton.mousePressed(togglePlayPause);
-  // playPauseButton.position(0, 0);
-  // playPauseButton.size(width/4, controlPanelHeight);
-
-  // tempoSlider = createSlider(30, 300, bpm);
-  // tempoSlider.position(width/4, 0);
-  // tempoSlider.size(width/4, controlPanelHeight);
-  // tempoText = createP("BPM: " + bpm);
-  // tempoText.position(width/2, 0);
-  // tempoText.size(width/4, controlPanelHeight);
-  
-  // clearButton = createButton('CLEAR ALL');
-  // clearButton.mousePressed(clearAll);
-  // clearButton.position(width*3/4, 0);
-  // clearButton.size(width/4, controlPanelHeight);
 
   started = true;
 }
@@ -194,8 +186,6 @@ function soundLoop(cycleStartTime) {
         var quaverSeconds = this._convertNotation('16n'); // 8th note = quaver duration
         var freq = midiToFreq(cells[i].pitch);
         synth.play(freq, velocity, cycleStartTime, quaverSeconds);
-
-        // ellipse(width/2, height/2,cells[i].intensity*4,cells[i].intensity*4);
       }
     } else {
       ellipse(width/2, height/2,2,2);
@@ -215,9 +205,7 @@ function draw() {
     cells[i].checkIfHovered();
     cells[i].display();
   }
-  // bpm = tempoSlider.value();
   bpm = bpm;
-  // tempoText.html("BPM: " + bpm);
 }
 
 function mouseClicked() {
@@ -277,8 +265,6 @@ var Cell = function(position, pitch) {
   this.enabled = false;
   var varyingColorVal = 22 * (this.pitch % pitches.length);
   this.enabledColor = [20 + varyingColorVal, 255 - varyingColorVal, 255];
-
-  // this.enabledColor = getColorValue(this.intensity);
 
   // Active when soundloop plays the cell
   this.active = false;

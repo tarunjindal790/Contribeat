@@ -17,6 +17,10 @@ body {
   font-family: "Comfortaa", cursive;
 }
 
+#searchBar {
+  justify-content: center;
+}
+
 #avatarImg {
   margin: 12px;
 }
@@ -41,6 +45,10 @@ body {
   display: block;
 }
 
-i.fa-solid{
+.xx-large{
   font-size: xx-large;
+}
+
+#loader{
+  margin:auto;
 }
