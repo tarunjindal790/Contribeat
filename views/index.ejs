@@ -7,6 +7,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;700&display=swap" rel="stylesheet"> 
         <link rel="stylesheet" href="styles.css" type="text/css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <script src="lib/p5.js" type="text/javascript"></script>
         <script src="lib/p5.dom.min.js" type="text/javascript"></script>
         <script src="lib/p5.sound.js" type="text/javascript"></script>
@@ -23,7 +24,11 @@
                 <button class="btn btn-dark" onclick="onSearchClick()">Search</button>
             </div>
             <div class="m-4">
-                <button class="btn btn-primary" onclick="togglePlayPause()">Play/Pause</button>
+                <button class="btn btn-primary" id="playPauseBtn" onclick="togglePlayPause()">
+                    <i id="playBtn" class="fa-solid fa-play"></i>
+                    <i id="pauseBtn" class="fa-solid fa-pause d-none"></i>
+                </button>
+                
                 <button class="btn btn-secondary" onclick="clearAll()">Clear all</button>
                 <label for="bpmSlider" id="bpmSliderLabel">BPM</label>
                 <input name="bpmSlider" onchange="bpmSliderChange()" type="range" id="bpmSlider" min="30" max="300" value="140">

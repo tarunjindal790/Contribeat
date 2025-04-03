@@ -40,3 +40,7 @@ body {
 .d-block {
   display: block;
 }
+
+i.fa-solid{
+  font-size: xx-large;
+}
