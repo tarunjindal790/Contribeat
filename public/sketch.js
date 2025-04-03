@@ -1,3 +1,7 @@
+const API_BASE_URL = window.location.hostname === "localhost" 
+? "http://localhost:3000"  // Local server
+: "https://contribeat.onrender.com";  // Deployed server
+
 const COLOR_MAP = {
   0: [235,237,240],
   1: [155,233,168],
@@ -13,16 +17,13 @@ function getColorValue(commitCount){
 var sloop;
 var bpm = 140; // 140 beats per minute
 
-// var numTimeSteps = 16;
 var numTimeSteps = 52;
 var timeStepCounter = 0;
-// var pitches = [57,60,62,64,67,69,72,74,76,79,81,84]; // A minor pentatonic scale
 
 var pitches = [57,60,62,64,67,69,72]; // A minor pentatonic scale
 
 var cells = [];
 var cellWidth, cellHeight;
-// var controlPanelHeight;
 let data;
 let started = false;
 const defaultUsername = 'tarunjindal790';
@@ -35,7 +36,7 @@ let sketchHeight;
 function bpmSliderChange(){
   const bpmSliderValue = document.querySelector('#bpmSlider').value;
   bpm = bpmSliderValue;
-  // document.querySelector('#bpmSliderLabel').textContent('BPM : '+ bpm);
+  document.querySelector('#bpmSliderLabel').textContent = 'BPM : '+ bpm;
 }
 
 function onSearchClick() {
@@ -61,30 +62,32 @@ function preload(){
   // sketchContainer.hide();
   // loader.show();
 
-  const url = `https://contribeat.onrender.com/githubData/${defaultUsername}`;
-  httpGet(url, 'json', false, function(response) {
-    data = response;
-    avatarElem.src=data.imgLink;
-    setup();
-    loader.classList.toggle('d-none');
-    // sketchContainer.classList.toggle('d-none');
-    // sketchContainer.classList.add('d-block');
-  });
+  // const url = `${API_BASE_URL}/githubData/${defaultUsername}`;
+  // httpGet(url, 'json', false, function(response) {
+  //   data = response;
+  //   avatarElem.src=data.imgLink;
+  //   setup()
+  //   loader.classList.toggle('d-none');
+  //   // sketchContainer.classList.toggle('d-none');
+  //   // sketchContainer.classList.add('d-block');
+  // });
   
-  // loadData(defaultUsername);
+  loadData(defaultUsername);
   // setup();
 }
 
 function loadData(username) {
+  stopMusic();
   const avatarElem = document.querySelector('#githubUserAvatarImg');
-  const url = `https://contribeat.onrender.com/githubData/${username}`;
+  const url = `${API_BASE_URL}/githubData/${username}`;
+  loader.classList.add('d-block');
   httpGet(url, 'json', false, function(response) {
     data = response;
-    // togglePlayPause();
-    populateCells();
-    avatarElem.src=data.imgLink;
-    // togglePlayPause();
-    // setup();
+    // console.log("I got data:", data);
+    avatarElem.src=data.avatarUrl;
+    setup();
+    loader.classList.remove('d-block');
+    loader.classList.add('d-none');
   });
 }
 
@@ -104,6 +107,7 @@ function setup() {
 
   cellWidth = 12;
   cellHeight = 12;
+  cells =[];
 
   for (var i=0; i<numTimeSteps; i++) {
     for (var j=0; j<pitches.length; j++) {
@@ -144,19 +148,33 @@ function setup() {
   started = true;
 }
 
-function populateCells(){
-  const myCells = data.myCells;
-  for(let i=0;i<cells.length;i++){
-    cells[i].enabled = false;
-    cells[i].enabledColor = COLOR_MAP[0];
-    if(myCells[i]>0){
-      cells[i].enabled = true;
-      cells[i].intensity = myCells[i];
-      cells[i].enabledColor = getColorValue(cells[i].intensity);
+function populateCells() {
+  if (!data || !data.contributions || !data.contributions.contributionCalendar) {
+    console.error("Invalid data format");
+    return;
+  }
+
+  const contributionDays = data.contributions.contributionCalendar.weeks.flatMap(week => week.contributionDays);
+  // console.log("Extracted contributionDays:", contributionDays); // Debugging line
+
+  for (let i = 0; i < cells.length; i++) {
+    if (i < contributionDays.length) {
+      let commitCount = contributionDays[i].contributionCount;
+      // console.log(`Cell ${i}: commitCount = ${commitCount}`); // Debugging line
+
+      cells[i].enabled = commitCount > 0;
+      cells[i].intensity = commitCount;
+      cells[i].enabledColor = getColorValue(commitCount);
+      // console.log(`Cell ${i} enabled: ${cells[i].enabled}, color: ${cells[i].enabledColor}`); // Debugging line
+    } else {
+      // Default state if no corresponding data
+      cells[i].enabled = false;
+      cells[i].intensity = 0;
+      cells[i].enabledColor = COLOR_MAP[0];
     }
   }
-  
 }
+
 
 function onUsernameChange(){
   loadData(this.value());
@@ -189,8 +207,10 @@ function soundLoop(cycleStartTime) {
 }
 
 function draw() {
+  // console.log("started:", started);
   if(!started) return;
   background(255);
+  // console.log("cells:", cells);
   for (var i=0; i<cells.length; i++) {
     cells[i].checkIfHovered();
     cells[i].display();
@@ -204,14 +224,28 @@ function mouseClicked() {
   for (var i=0; i<cells.length; i++) {
     if (cells[i].hovered) {
       cells[i].enabled = !cells[i].enabled;
+      cells[i].enabledColor = getColorValue(1); 
     }
   }
 }
 
 function togglePlayPause() {
-  if (sloop.isPlaying) {
-    sloop.pause();
-  } else {
+  sloop.isPlaying ? stopMusic() : startMusic();
+}
+
+function stopMusic(){
+  if(sloop && sloop.isPlaying){
+    document.querySelector('#playBtn').classList.toggle('d-none');
+    document.querySelector('#pauseBtn').classList.toggle('d-none');
+    sloop.stop();
+    synth.noteRelease(); 
+  }
+}
+
+function startMusic(){
+  if(sloop){
+    document.querySelector('#playBtn').classList.toggle('d-none');
+    document.querySelector('#pauseBtn').classList.toggle('d-none');
     sloop.start();
   }
 }
