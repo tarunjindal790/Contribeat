@@ -14,13 +14,60 @@ function getColorValue(commitCount){
   if(commitCount<=4) return COLOR_MAP[commitCount];
   else return COLOR_MAP[4];
 }
+
 var sloop;
 var bpm = 140; // 140 beats per minute
 
 var numTimeSteps = 52;
 var timeStepCounter = 0;
 
-var pitches = [57,60,62,64,67,69,72]; // A minor pentatonic scale
+// var pitches = [57,60,62,64,67,69,72]; // A minor pentatonic scale
+
+var pitches = [60, 62, 66, 69, 71, 74, 76]; // Example: Raga Yaman (C, D, E, F#, G, A, B)
+ // Predefined scales
+ var scales = {
+  major: [60, 62, 64, 65, 67, 69, 71, 72],
+  minor: [60, 62, 63, 65, 67, 68, 70, 72],
+  pentatonic: [60, 62, 64, 67, 69, 72],
+  raag_yaman: [60, 62, 64, 66, 69, 71, 72] // Example: Raag Yaman
+};
+
+function updatePitches(inputString) {
+  pitches = inputString.split(',').map(num => parseInt(num.trim(), 10)).filter(n => !isNaN(n));
+  createSliders();
+}
+
+function setScale(scaleName) {
+  if (scaleName === "custom") {
+      document.getElementById('pitchInput').disabled = false;
+  } else {
+      pitches = scales[scaleName];
+      document.getElementById('pitchInput').value = pitches.join(', ');
+      document.getElementById('pitchInput').disabled = true;
+  }
+  createSliders();
+}
+
+function createSliders() {
+  let sliderContainer = document.getElementById('sliders');
+  sliderContainer.innerHTML = ""; // Clear existing sliders
+  
+  pitches.forEach((pitch, index) => {
+      let sliderDiv = document.createElement('div');
+      sliderDiv.innerHTML = `
+          <label>Pitch ${index + 1} (MIDI: ${pitch}): </label>
+          <input type="range" min="40" max="80" value="${pitch}" oninput="adjustPitch(${index}, this.value)">
+          <span>${pitch}</span>
+          <br>
+      `;
+      sliderContainer.appendChild(sliderDiv);
+  });
+}
+
+function adjustPitch(index, value) {
+  pitches[index] = parseInt(value, 10);
+  document.querySelectorAll('#sliders span')[index].innerText = value;
+}
 
 var cells = [];
 var cellWidth, cellHeight;
@@ -48,6 +95,8 @@ function preload(){
   const usernameInput = document.querySelector('#usernameInput');
   usernameInput.value = defaultUsername;
   loadData(defaultUsername);
+  const defaultScale = document.getElementById('scaleSelect').options[0].value;
+  setScale(defaultScale);
 }
 
 async function searchUsers() {
@@ -83,50 +132,77 @@ async function searchUsers() {
 }
 
 async function fetchUserData(username) {
-  document.getElementById("searchResults").innerHTML = ``;
+  // document.getElementById("searchResults").innerHTML = ``;
   loadData(username);
 }
 
 
-function loadData(username) {
+async function loadData(username) {
   stopMusic();
-  const avatarElem = document.querySelector('#githubUserAvatarImg');
+
   const url = `${API_BASE_URL}/githubData/${username}`;
   loader.classList.add('d-block');
-  httpGet(url, 'json', false, function(response) {
-    if(!response){
-      return;
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (!json) {
+      throw new Error("No data received");
     }
-    data = response;
+
+    data = json;
     console.log("I got data:", data);
-    avatarElem.src=data.avatarUrl;
+    updateUserInfo();
     setup();
+  } catch (err) {
+    console.error("Failed to fetch user data:", err);
+    alert("Failed to load data. Please try again later.");
+  } finally {
     loader.classList.remove('d-block');
     loader.classList.add('d-none');
-  });
+  }
+}
+
+
+function updateUserInfo(){
+  const avatarElem = document.querySelector('#githubUserAvatarImg');
+  avatarElem.src=data.avatarUrl;
+  const userInfoContainer = document.getElementById("userInfo");
+    userInfoContainer.innerHTML = `
+        <h2>${data.name}</h2>
+        <p>${data.bio}</p>
+        <p>📍 ${data.location}</p>
+        <p>👥 ${data.followers} followers | ${data.following} following</p>
+    `;
 }
 
 function setup() {
-  
-  if(!data) return;
-  sketchHeight = document.querySelector('#sketchContainer').offsetHeight;
-  sketchWidth = document.querySelector('#sketchContainer').offsetWidth;
-  const myCanvas = createCanvas(sketchWidth, sketchHeight);
-  myCanvas.parent("#sketchContainer");
-  frameRate(10);
-
   cellWidth = 12;
   cellHeight = 12;
   cells =[];
+  let totalWidth = numTimeSteps * cellWidth;
+  let totalHeight = pitches.length * cellHeight;
+  sketchHeight = document.querySelector('#sketchContainer').offsetHeight;
+  sketchWidth = document.querySelector('#sketchContainer').offsetWidth;
+
+  
+let xOffset = Math.max(0, (sketchWidth - totalWidth) / 2);
+  if(!data) return;
+  
+  const myCanvas = createCanvas(sketchWidth, sketchHeight);
+  myCanvas.parent("#sketchContainer");
+  myCanvas.style("display", "block");
+  myCanvas.style("margin", "0 auto");
+  frameRate(10);
+
 
   for (var i=0; i<numTimeSteps; i++) {
     for (var j=0; j<pitches.length; j++) {
-      var x = i*cellWidth;
-      var y = j*cellHeight;
+      var x = i * cellWidth + xOffset;
+      var y = j * cellHeight;
       var pitch = pitches[pitches.length - j - 1]; // Pitches go from bottom to top
-      cells.push(
-        new Cell(createVector(x, y), pitch)
-      );
+      cells.push(new Cell(createVector(x, y), pitch));
     }
   }
   populateCells();
@@ -172,34 +248,49 @@ function onUsernameChange(){
   loadData(this.value());
 }
 
+var talaPattern = [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1]; // Teentaal
+
 function soundLoop(cycleStartTime) {
-  for (var i=0; i<cells.length; i++) {
-    if (floor(i / pitches.length) == timeStepCounter) {
+  for (var i = 0; i < cells.length; i++) {
+    let currentStep = timeStepCounter % numTimeSteps; // Ensure it wraps correctly
+    if (Math.floor(i / pitches.length) === currentStep) {
       cells[i].active = true;
       if (cells[i].enabled) {
-        // Play sound
+        // cells[i].active = true;
 
+        var maxIntensity = Math.max(...cells.map(c => c.intensity)); 
+        var velocity = map(cells[i].intensity, 0, maxIntensity, 0, 1);
+        var quaverSeconds = this._convertNotation('16n');
 
-        // var velocity = 1; // Between 0-1
-        var velocity = map(cells[i].intensity,0,Math.max(cells),0,1);
-        
-        var quaverSeconds = this._convertNotation('16n'); // 8th note = quaver duration
-        var freq = midiToFreq(cells[i].pitch);
-        synth.play(freq, velocity, cycleStartTime, quaverSeconds);
+        // if (talaPattern[timeStepCounter % talaPattern.length]) {
+          var pitchIndex = i % pitches.length; 
+          var freq = getIndianPitch(pitches[pitchIndex]);
+          synth.play(freq, velocity, cycleStartTime, quaverSeconds);
+        // }
       }
-    } else {
-      ellipse(width/2, height/2,2,2);
+    }else {
+      // ellipse(width / 2, height / 2, 2, 2);
       cells[i].active = false;
     }
   }
+
   this.bpm = bpm;
   timeStepCounter = (timeStepCounter + 1) % numTimeSteps;
 }
+
+
+function getIndianPitch(midiNote) {
+  let microtoneVariation = random(-10, 10); // Small pitch shifts for natural feel
+  return midiToFreq(midiNote) * (1 + microtoneVariation / 1000);
+}
+
 
 function draw() {
   // console.log("started:", started);
   if(!started) return;
   background(255);
+  let currentStep = timeStepCounter % numTimeSteps;
+
   // console.log("cells:", cells);
   for (var i=0; i<cells.length; i++) {
     cells[i].checkIfHovered();
@@ -269,6 +360,8 @@ var Cell = function(position, pitch) {
   // Active when soundloop plays the cell
   this.active = false;
   this.activeColor = [230, 255, 255];
+  // this.activeColor = [255, 0, 0];
+
 }
 
 Cell.prototype.display = function() {
