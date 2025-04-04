@@ -42,8 +42,13 @@ app.get('/searchGithubUsers/:query', async (req, res) => {
 
 app.get('/githubData/:username',async function (req,res) {
   console.log("received username:", req.params.username);
-    const r = await loadGithubData(req.params.username);
-    res.json(r);
+  const userData = await loadGithubData(req.params.username);
+
+  if (!userData) {
+      return res.status(404).json({ error: "User not found or data unavailable." });
+  }
+
+  res.json(userData);
 })
 
 app.listen(PORT, function () {
@@ -84,16 +89,25 @@ async function loadGithubData(username) {
   {
     user(login: "${username}") {
     avatarUrl
-      contributionsCollection {
-        contributionCalendar {
-          weeks {
-            contributionDays {
-              date
-              contributionCount
-            }
+    name
+    bio
+    location
+    followers{
+      totalCount
+    }
+    following{
+    totalCount
+    }
+    contributionsCollection {
+      contributionCalendar {
+        weeks {
+          contributionDays {
+            date
+            contributionCount
           }
         }
       }
+    }
     }
   }`;
 
@@ -112,11 +126,21 @@ async function loadGithubData(username) {
     console.error("Error fetching data:", data.errors);
     return null;
   }
-  const avatarUrl = data.data.user.avatarUrl;
-  const contributions = data.data.user.contributionsCollection;
+  const user = data.data.user;
+    return {
+        avatarUrl: user.avatarUrl,
+        name: user.name || username, 
+        bio: user.bio || "No bio available",
+        location: user.location || "Unknown",
+        followers: user.followers.totalCount,
+        following: user.following.totalCount,
+        contributions: user.contributionsCollection
+    };
+  // const avatarUrl = data.data.user.avatarUrl;
+  // const contributions = data.data.user.contributionsCollection;
 
   // You can now use the avatarUrl to display the image and contributions as needed.
-  return { contributions,avatarUrl };
+  // return { contributions,avatarUrl };
   // return data;
 }
 
